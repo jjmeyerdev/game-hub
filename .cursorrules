@@ -1,0 +1,154 @@
+# Game Hub - Cursor Rules
+
+You are an expert in TypeScript, Next.js 16 (App Router), React 19, Tailwind CSS 4, Prisma 7, and Better Auth.
+
+## Project Context
+
+Game Hub is a web-based game library aggregator. Users connect their Steam account (MVP) to automatically sync their game library, then track status (Playing, Backlog, Completed, etc.).
+
+Tech stack: Next.js 16.1, React 19.2, Tailwind CSS 4.1, Prisma 7.2, Better Auth 1.4.9, Supabase (PostgreSQL).
+
+## Code Style
+
+- Use TypeScript strict mode — no `any` types unless absolutely necessary
+- Prefer `async/await` over `.then()` chains
+- Use named exports for components, default exports for pages
+- Destructure props in function signatures
+- Use early returns to reduce nesting
+
+## Naming Conventions
+
+- Components: PascalCase (`GameCard.tsx`)
+- Utilities/hooks: camelCase (`useLibrary.ts`)
+- API routes: kebab-case in URL, camelCase in code
+- Database fields: camelCase (Prisma handles DB mapping)
+- Types/interfaces: PascalCase with descriptive names (`GameEntry`, `UserProfile`)
+
+## React Patterns
+
+- Use Server Components by default
+- Only add `'use client'` when needed (interactivity, hooks, browser APIs)
+- Prefer composition over prop drilling
+- Colocate related components in the same folder
+- Use shadcn/ui components as base, customize via className
+
+## File Structure
+
+```
+app/
+├── (auth)/           # Auth routes (login, register)
+├── (main)/           # Main app routes with shared layout
+├── api/              # API routes
+components/
+├── ui/               # shadcn/ui components
+├── [feature]/        # Feature-specific components
+lib/
+├── auth.ts           # Better Auth config
+├── db.ts             # Prisma client
+├── [service].ts      # Service modules
+```
+
+## Database (Prisma)
+
+- Always use Prisma client from `lib/db.ts`
+- Use transactions for multi-table operations
+- Include proper error handling for database operations
+- Use `select` to limit returned fields when possible
+
+```typescript
+// Good
+const user = await db.user.findUnique({
+  where: { id },
+  select: { id: true, username: true, avatarUrl: true },
+});
+
+// Avoid - fetches everything
+const user = await db.user.findUnique({ where: { id } });
+```
+
+## API Routes
+
+- Use Next.js Route Handlers (not Pages API)
+- Return proper status codes (200, 201, 400, 401, 404, 500)
+- Always validate input before processing
+- Handle errors gracefully with try/catch
+
+```typescript
+// app/api/library/route.ts
+export async function GET(request: Request) {
+  try {
+    const session = await auth();
+    if (!session) {
+      return Response.json({ error: "Unauthorized" }, { status: 401 });
+    }
+    // ... rest of handler
+  } catch (error) {
+    console.error("Library fetch error:", error);
+    return Response.json({ error: "Internal server error" }, { status: 500 });
+  }
+}
+```
+
+## Authentication (Better Auth)
+
+- Access session via `auth()` in Server Components
+- Access session via `useSession()` in Client Components
+- Protected routes should check session and redirect if missing
+- Never expose sensitive tokens to client
+
+## Styling (Tailwind CSS 4)
+
+- Use Tailwind utility classes, avoid custom CSS
+- Follow mobile-first responsive design (default styles for mobile, `md:` for desktop)
+- Use shadcn/ui components and customize via className
+- Keep consistent spacing (use Tailwind's scale: 4, 6, 8, etc.)
+
+## TypeScript
+
+- Define types in a `types.ts` file or colocate with components
+- Use `interface` for objects, `type` for unions/primitives
+- Prefer `unknown` over `any` when type is truly unknown
+- Use Prisma-generated types for database models
+
+```typescript
+// Use Prisma types
+import type { User, GameEntry } from "@prisma/client";
+
+// Extend when needed
+interface UserWithEntries extends User {
+  gameEntries: GameEntry[];
+}
+```
+
+## Error Handling
+
+- Use try/catch for async operations
+- Log errors server-side with context
+- Return user-friendly error messages to client
+- Never expose stack traces or internal details to client
+
+## Comments
+
+- Don't comment obvious code
+- Do comment complex business logic
+- Use JSDoc for exported functions that aren't self-explanatory
+- TODO comments should include context: `// TODO(auth): Add rate limiting`
+
+## Git Commits
+
+Use conventional commits:
+
+- `feat(scope): description` — New features
+- `fix(scope): description` — Bug fixes
+- `chore(scope): description` — Maintenance
+- `refactor(scope): description` — Code improvements
+
+## What NOT to Do
+
+- Don't use `var` — use `const` or `let`
+- Don't use `any` type without a comment explaining why
+- Don't put secrets in code — use environment variables
+- Don't skip error handling
+- Don't use inline styles — use Tailwind
+- Don't create deeply nested ternaries — use early returns or separate logic
+- Don't import from `@prisma/client` directly — use the singleton from `lib/db.ts`
